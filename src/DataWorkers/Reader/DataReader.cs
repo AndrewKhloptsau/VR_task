@@ -22,6 +22,10 @@ namespace VRtask.DataWorkers.Reader
         }.ToFrozenDictionary(); //fast lookup for immutable dictionary
 
         private readonly Logger _logger = LogManager.GetCurrentClassLogger();
+        private string _lastSupplierId;
+
+        public event Action<string, string, int> SaveContentInfo;
+        public event Action<string, string> SaveBoxInfo;
 
 
         public async Task ReadData(FileInfo fileInfo, CancellationToken token)
@@ -54,7 +58,7 @@ namespace VRtask.DataWorkers.Reader
         }
 
 
-        private static bool TryParseString(string str, out string error) =>
+        private bool TryParseString(string str, out string error) =>
             GetLineType(str) switch
             {
                 DataType.Content => TryParseAndSaveContentInfo(str, out error),
@@ -63,18 +67,30 @@ namespace VRtask.DataWorkers.Reader
                 _ => SetUnknownError(str, out error)
             };
 
-        private static bool TryParseAndSaveBoxInfo(string str, out string error)
+        private bool TryParseAndSaveBoxInfo(string str, out string error)
         {
             var parts = GetParts(str);
 
             if (parts.Length != 3)
                 return SetInvalidStringFormatError(str, out error);
 
+            var supplierIdStr = parts[1];
+            var boxIdStr = parts[2];
+
+            if (!TryParseIdentifier(supplierIdStr, out _lastSupplierId))
+                return SetInvalidIdError(supplierIdStr, out error);
+
+            if (!TryParseIdentifier(boxIdStr, out var boxId))
+                return SetInvalidIdError(boxIdStr, out error);
+
+            SaveBoxInfo?.Invoke(_lastSupplierId, boxId);
+
             error = null;
+
             return true;
         }
 
-        private static bool TryParseAndSaveContentInfo(string str, out string error)
+        private bool TryParseAndSaveContentInfo(string str, out string error)
         {
             var parts = GetParts(str);
 
@@ -84,16 +100,33 @@ namespace VRtask.DataWorkers.Reader
             var isbnStr = parts[2];
             var qtyStr = parts[3];
 
-            if (!long.TryParse(isbnStr, out var isbn))
-                return SetInvalidNumberError(isbnStr, out error);
+            if (!TryParseIdentifier(isbnStr, out var isbn))
+                return SetInvalidIdError(isbnStr, out error);
 
-            if (!long.TryParse(qtyStr, out var qty))
+            if (!int.TryParse(qtyStr, out var qty))
                 return SetInvalidNumberError(qtyStr, out error);
+
+            if (!string.IsNullOrEmpty(_lastSupplierId))
+                SaveContentInfo?.Invoke(_lastSupplierId, isbn, qty);
 
             error = null;
             return true;
         }
 
+
+        private static bool TryParseIdentifier(string str, out string id)
+        {
+            // custom checking for correct identifier (string length, correct chars etc.)
+
+            id = str;
+            return true;
+        }
+
+        private static bool SetInvalidIdError(string str, out string error)
+        {
+            error = $"Invalid identifier {str}";
+            return false;
+        }
 
         private static bool SetInvalidNumberError(string str, out string error)
         {
