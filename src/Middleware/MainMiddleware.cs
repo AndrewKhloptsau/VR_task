@@ -1,4 +1,5 @@
 ﻿using NLog;
+using VRtask.Database;
 using VRtask.DataWorkers.Loader;
 using VRtask.DataWorkers.Reader;
 using VRtask.FileWorkers;
@@ -10,11 +11,14 @@ namespace VRtask.Middleware
     {
         private const int ActiveLoadersCount = 2; //temp value for test data
         private const int MaxLoadersCount = 4; // machine overload protection
-        
-        private readonly List<IDataLoader> _loaders = new(1 << 4);
+
+        private readonly List<IDataLoader> _loaders = new(MaxLoadersCount);
+        private readonly List<IDataReader> _readers = new(MaxLoadersCount);
+
+        private readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
         private readonly IFileProcessQueue _fileQueue = new FileProcessQueue();
-        private readonly Logger _logger = LogManager.GetCurrentClassLogger();
+        private readonly IDatabaseWorker _dbWorker = new DatabaseWorker();
 
         private FileWatcher _watcher;
 
@@ -38,11 +42,18 @@ namespace VRtask.Middleware
 
         public void Dispose()
         {
+            foreach (var reader in _readers)
+            {
+                reader.SaveContentInfo -= _dbWorker.SaveContentInfo;
+                reader.SaveBoxInfo -= _dbWorker.SaveBoxInfo;
+            }
+
             foreach (var loader in _loaders)
                 loader?.Dispose();
 
             _fileQueue?.Dispose();
             _watcher?.Dispose();
+            _dbWorker?.Dispose();
         }
 
         private bool TryInitWatcher(string targetFolder)
@@ -70,9 +81,15 @@ namespace VRtask.Middleware
             }
 
             var reader = new DataReader();
+
+            reader.SaveContentInfo += _dbWorker.SaveContentInfo;
+            reader.SaveBoxInfo += _dbWorker.SaveBoxInfo;
+
             var loader = new DataLoader(_fileQueue, reader);
 
             _loaders.Add(loader);
+            _readers.Add(reader);
+
             _logger.Info("Loader #{0} has been added.", _loaders.Count);
 
             return true;

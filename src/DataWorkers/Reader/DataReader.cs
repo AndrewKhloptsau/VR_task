@@ -22,7 +22,7 @@ namespace VRtask.DataWorkers.Reader
         }.ToFrozenDictionary(); //fast lookup for immutable dictionary
 
         private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-        private string _lastSupplierId;
+        private string _lastBoxId;
 
         public event Action<string, string, int> SaveContentInfo;
         public event Action<string, string> SaveBoxInfo;
@@ -77,13 +77,13 @@ namespace VRtask.DataWorkers.Reader
             var supplierIdStr = parts[1];
             var boxIdStr = parts[2];
 
-            if (!TryParseIdentifier(supplierIdStr, out _lastSupplierId))
+            if (!TryParseIdentifier(supplierIdStr, out var supplierId))
                 return SetInvalidIdError(supplierIdStr, out error);
 
-            if (!TryParseIdentifier(boxIdStr, out var boxId))
+            if (!TryParseIdentifier(boxIdStr, out _lastBoxId))
                 return SetInvalidIdError(boxIdStr, out error);
 
-            SaveBoxInfo?.Invoke(_lastSupplierId, boxId);
+            SaveBoxInfo?.Invoke(supplierId, _lastBoxId);
 
             error = null;
 
@@ -106,8 +106,8 @@ namespace VRtask.DataWorkers.Reader
             if (!int.TryParse(qtyStr, out var qty))
                 return SetInvalidNumberError(qtyStr, out error);
 
-            if (!string.IsNullOrEmpty(_lastSupplierId))
-                SaveContentInfo?.Invoke(_lastSupplierId, isbn, qty);
+            if (!string.IsNullOrEmpty(_lastBoxId))
+                SaveContentInfo?.Invoke(_lastBoxId, isbn, qty);
 
             error = null;
             return true;
