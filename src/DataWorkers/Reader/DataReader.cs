@@ -24,7 +24,7 @@ namespace VRtask.DataWorkers.Reader
         private readonly Logger _logger = LogManager.GetCurrentClassLogger();
         private string _lastBoxId;
 
-        public event Action<string, string, int> SaveContentInfo;
+        public event Action<string, string, string, int> SaveContentInfo;
         public event Action<string, string> SaveBoxInfo;
 
 
@@ -97,8 +97,12 @@ namespace VRtask.DataWorkers.Reader
             if (parts.Length != 4)
                 return SetInvalidStringFormatError(str, out error);
 
+            var poNumberStr = parts[1];
             var isbnStr = parts[2];
             var qtyStr = parts[3];
+
+            if (!TryParseIdentifier(poNumberStr, out var poNumber))
+                return SetInvalidIdError(poNumberStr, out error);
 
             if (!TryParseIdentifier(isbnStr, out var isbn))
                 return SetInvalidIdError(isbnStr, out error);
@@ -107,7 +111,7 @@ namespace VRtask.DataWorkers.Reader
                 return SetInvalidNumberError(qtyStr, out error);
 
             if (!string.IsNullOrEmpty(_lastBoxId))
-                SaveContentInfo?.Invoke(_lastBoxId, isbn, qty);
+                SaveContentInfo?.Invoke(_lastBoxId, poNumber, isbn, qty);
 
             error = null;
             return true;

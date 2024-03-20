@@ -18,7 +18,7 @@ namespace VRtask.Middleware
         private readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
         private readonly IFileProcessQueue _fileQueue = new FileProcessQueue();
-        private readonly IDatabaseWorker _dbWorker = new DatabaseWorker();
+        private readonly IDatabaseContext _dbWorker = new DatabaseContext();
 
         private FileWatcher _watcher;
 
