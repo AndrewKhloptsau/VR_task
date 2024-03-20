@@ -24,6 +24,17 @@ namespace VRtask.FileWorkers
             _watcher.Created += LoadNewFile;
             _watcher.Error += LogError;
             //also OnChanged handler can be implemented
+
+            ScanTargetDirectory(targetPath);
+        }
+
+
+        private void ScanTargetDirectory(string targetPath)
+        {
+            var info = new DirectoryInfo(targetPath);
+
+            foreach (var file in info.GetFiles(DefaultFileFilter))
+                _fileQueue.PushFilePath(file.FullName);
         }
 
 
