@@ -47,8 +47,10 @@ namespace VRtask.DataWorkers.Reader
                     var line = await reader.ReadLineAsync(token);
                     lineNumber++;
 
-                    if (!TryParseString(line, out var error))
-                        _logger.Error("Parsing error on line #{0}: {1}", lineNumber, error);
+                    if (string.IsNullOrEmpty(line) || TryParseString(line, out var error))
+                        continue;
+
+                    _logger.Error("Parsing error on line #{0}: {1}", lineNumber, error);
                 }
             }
             catch (Exception ex)
@@ -58,19 +60,22 @@ namespace VRtask.DataWorkers.Reader
         }
 
 
-        private bool TryParseString(string str, out string error) =>
-            GetLineType(str) switch
+        private bool TryParseString(string str, out string error)
+        {
+            var parts = GetParts(str);
+            var itemType = parts[0];
+
+            return GetLineType(itemType) switch
             {
-                DataType.Content => TryParseAndSaveContentInfo(str, out error),
-                DataType.Box => TryParseAndSaveBoxInfo(str, out error),
+                DataType.Content => TryParseAndSaveContentInfo(str, parts, out error),
+                DataType.Box => TryParseAndSaveBoxInfo(str, parts, out error),
 
                 _ => SetUnknownError(str, out error)
             };
+        }
 
-        private bool TryParseAndSaveBoxInfo(string str, out string error)
+        private bool TryParseAndSaveBoxInfo(string str, string[] parts, out string error)
         {
-            var parts = GetParts(str);
-
             if (parts.Length != 3)
                 return SetInvalidStringFormatError(str, out error);
 
@@ -90,10 +95,8 @@ namespace VRtask.DataWorkers.Reader
             return true;
         }
 
-        private bool TryParseAndSaveContentInfo(string str, out string error)
+        private bool TryParseAndSaveContentInfo(string str, string[] parts, out string error)
         {
-            var parts = GetParts(str);
-
             if (parts.Length != 4)
                 return SetInvalidStringFormatError(str, out error);
 
@@ -150,8 +153,9 @@ namespace VRtask.DataWorkers.Reader
             return false;
         }
 
-        private static DataType GetLineType(ReadOnlySpan<char> span) =>
-            _lineTypeMapper.TryGetValue(span.ToString(), out var type) ? type : DataType.Unknown;
+
+        private static DataType GetLineType(string typeStr) =>
+            _lineTypeMapper.TryGetValue(typeStr, out var type) ? type : DataType.Unknown;
 
         private static string[] GetParts(string str) =>
             str.Split(' ', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);

@@ -10,6 +10,6 @@ namespace VRtask.Database.Models
         [Key]
         public string Identifier { get; set; }
 
-        public List<Content> Contents { get; set; }
+        public List<Content> Contents { get; set; } = new();
     }
 }
