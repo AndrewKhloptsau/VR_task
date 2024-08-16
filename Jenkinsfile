@@ -11,26 +11,26 @@ pipeline {
                 }
             }
         }
-        // stage("Checkout") {
-		// 	steps {
-        //         script {
-        //             checkout scmGit([
-        //                 branches: [[name: "${env.BRANCH_NAME}"]],
-        //                 extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "${SOLUTION_DIR}"]],
-        //                 userRemoteConfigs: [[credentialsId: 'Bitbucket', url: "http://192.168.2.183:7990/scm/pki/kms.git"]]
-        //             ])
+        stage("Checkout") {
+			steps {
+                script {
+                    // checkout scmGit([
+                    //     branches: [[name: "${env.BRANCH_NAME}"]],
+                    //     extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: "${SOLUTION_DIR}"]],
+                    //     userRemoteConfigs: [[credentialsId: 'Bitbucket', url: "http://192.168.2.183:7990/scm/pki/kms.git"]]
+                    // ])
 
-        //             // def info = gitCheckout(url: 'pki/kms.git', branch: env.BRANCH_NAME, directory: "${SOLUTION_DIR}")
+                    // def info = gitCheckout(url: 'pki/kms.git', branch: env.BRANCH_NAME, directory: "${SOLUTION_DIR}")
 
-        //             // env.LAST_COMMIT_HASH = "${info.GIT_COMMIT}"
+                    // env.LAST_COMMIT_HASH = "${info.GIT_COMMIT}"
 
-        //             //echo "Last Commit hash: ${env.LAST_COMMIT_HASH}"
-        //             echo "Git env: ${env.GIT_COMMIT}"
-        //             // echo "Git env: ${GIT_REVISION,length=8}"
-		// 	    }
-        //     }
-        // }
-  
+                    //echo "Last Commit hash: ${env.LAST_COMMIT_HASH}"
+                    echo "Git env: ${env.GIT_COMMIT}"
+                    echo "Git commit: ${GIT_COMMIT}"
+                    echo "Git revision: ${GIT_REVISION,length=8}"
+			    }
+            }
+        }
     }
 	post {
 		always {
