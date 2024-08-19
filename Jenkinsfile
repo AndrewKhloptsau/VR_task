@@ -26,7 +26,10 @@ pipeline {
 
                     //echo "Last Commit hash: ${env.LAST_COMMIT_HASH}"
                     echo "Git env: ${env.GIT_COMMIT}"
-                    echo "Git build: ${BUILDS_ALL_TIME}"
+
+                    tag = VersionNumber(versionNumberString: '${BUILDS_ALL_TIME}')
+
+                    echo "${tag}"
 			    }
             }
         }
