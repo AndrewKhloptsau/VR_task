@@ -26,7 +26,7 @@ pipeline {
 
                     //echo "Last Commit hash: ${env.LAST_COMMIT_HASH}"
                     echo "Git env: ${env.GIT_COMMIT}"
-                    echo "Git commit: ${GIT_COMMIT}"
+                    echo "Git build: ${env.BUILDS_ALL_TIME}"
 			    }
             }
         }
